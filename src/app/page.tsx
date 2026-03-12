@@ -5,6 +5,7 @@ import { WhyChooseUs } from "@/components/home/why-choose-us";
 import { Testimonials } from "@/components/home/testimonials";
 import { FAQSection } from "@/components/home/faq-section";
 import { ContactSection } from "@/components/home/contact-section";
+import { HowWeWork } from "@/components/home/how-we-work";
 
 export default function Home() {
   return (
@@ -22,6 +23,13 @@ export default function Home() {
         ========================================
       */}
       <WhyChooseUs />
+
+      {/* 
+        ========================================
+        HOW WE WORK SECTION
+        ========================================
+      */}
+      <HowWeWork />
 
       {/* 
         ========================================
