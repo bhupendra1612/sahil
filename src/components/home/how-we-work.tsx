@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { 
   ClipboardList, 
   PenTool, 
@@ -97,7 +97,29 @@ const WORK_STEPS = [
 
 export function HowWeWork() {
   const [activeStepIndex, setActiveStepIndex] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
+
+  const next = useCallback(
+    () => setActiveStepIndex((p) => (p + 1) % WORK_STEPS.length),
+    [],
+  );
+
+  /* auto-rotate */
+  useEffect(() => {
+    if (isPaused) return;
+    const id = setInterval(next, 4000);
+    return () => clearInterval(id);
+  }, [isPaused, next]);
+
   const activeStep = WORK_STEPS[activeStepIndex];
+
+  /* wheel node positions (circular) */
+  const getPos = (idx: number) => {
+    const angle = (idx * 360) / WORK_STEPS.length - 90;
+    const rad = (angle * Math.PI) / 180;
+    const r = 155; // radius px
+    return { x: Math.cos(rad) * r, y: Math.sin(rad) * r };
+  };
 
   return (
     <section className="py-24 relative overflow-hidden bg-[#0A101D] text-white font-sans">
@@ -198,71 +220,141 @@ export function HowWeWork() {
           </div>
 
           {/* Right: Circular Interactive Graphic */}
-          <div className="w-full lg:w-1/2 flex justify-center py-10 lg:py-0">
-            <div className="relative w-[340px] h-[340px] md:w-[460px] md:h-[460px]">
+          <div 
+            className="w-full lg:w-1/2 flex justify-center py-10 lg:py-0 overflow-visible"
+            onMouseEnter={() => setIsPaused(true)}
+            onMouseLeave={() => setIsPaused(false)}
+          >
+            <div className="relative w-[320px] h-[320px] sm:w-[420px] sm:h-[420px] scale-90 sm:scale-100">
               
-              {/* Center Glow */}
-              <div 
-                className="absolute inset-0 m-auto w-[60%] h-[60%] rounded-full blur-[80px] transition-colors duration-700 ease-in-out mix-blend-lighten" 
-                style={{ backgroundColor: activeStep.color, opacity: 0.6 }}
+              {/* Outer glow */}
+              <div
+                className="absolute inset-[-40px] rounded-full opacity-25 blur-3xl transition-all duration-700 pointer-events-none"
+                style={{
+                  background: `conic-gradient(from 0deg, ${WORK_STEPS.map((p) => p.color).join(", ")}, ${WORK_STEPS[0].color})`,
+                }}
               />
 
-              {/* Dotted Circle Track */}
-              <div className="absolute inset-[10%] rounded-full border border-dashed border-slate-600/60 animate-[spin-slow_40s_linear_infinite]" />
-              <div className="absolute inset-[12%] rounded-full border border-slate-700/30" />
+              {/* Dashed orbit ring */}
+              <div
+                className="absolute inset-[-18px] rounded-full border-2 border-dashed border-white/10 animate-spin pointer-events-none"
+                style={{ animationDuration: "60s" }}
+              />
+
+              {/* Main disc */}
+              <div className="absolute inset-0 rounded-full bg-linear-to-br from-white/6 to-white/2 shadow-2xl border border-white/10 backdrop-blur-sm pointer-events-none" />
+
+              {/* SVG gradient ring */}
+              <svg
+                className="absolute inset-0 w-full h-full pointer-events-none"
+                viewBox="0 0 420 420"
+              >
+                <defs>
+                  <linearGradient
+                    id="wheelRingHowWeWork"
+                    x1="0%"
+                    y1="0%"
+                    x2="100%"
+                    y2="100%"
+                  >
+                    {WORK_STEPS.map((p, i) => (
+                      <stop
+                        key={i}
+                        offset={`${(i / WORK_STEPS.length) * 100}%`}
+                        stopColor={p.color}
+                      />
+                    ))}
+                    <stop offset="100%" stopColor={WORK_STEPS[0].color} />
+                  </linearGradient>
+                </defs>
+                <circle
+                  cx="210"
+                  cy="210"
+                  r="195"
+                  fill="none"
+                  stroke="url(#wheelRingHowWeWork)"
+                  strokeWidth="3"
+                  strokeDasharray="18 8"
+                  className="animate-spin"
+                  style={{
+                    animationDuration: "35s",
+                    transformOrigin: "center",
+                  }}
+                />
+              </svg>
               
               {/* Nodes Map */}
               {WORK_STEPS.map((step, index) => {
-                // Determine position on circle. -90deg is top. 
-                // Using standard trig: x = cx + r*cos(a), y = cy + r*sin(a)
-                const angle = -90 + (index * 72);
-                const radians = angle * (Math.PI / 180);
-                const radius = 45; // percentage from center
-                const x = 50 + radius * Math.cos(radians);
-                const y = 50 + radius * Math.sin(radians);
+                const pos = getPos(index);
                 const isActive = activeStepIndex === index;
 
                 return (
                   <button
                     key={step.id}
                     onClick={() => setActiveStepIndex(index)}
-                    style={{ left: `${x}%`, top: `${y}%` }}
-                    className={`absolute rounded-full flex flex-col items-center justify-center transition-all duration-500 transform -translate-x-1/2 -translate-y-1/2 cursor-pointer outline-none focus:outline-none focus:ring-4 focus:ring-slate-700 ring-offset-4 ring-offset-[#0A101D]
-                      ${isActive 
-                        ? 'w-24 h-24 md:w-28 md:h-28 scale-110 shadow-2xl z-20' 
-                        : 'w-16 h-16 md:w-20 md:h-20 scale-90 hover:scale-100 opacity-60 hover:opacity-100 z-10'
-                      }
-                    `}
+                    aria-label={`Select step ${step.short}`}
+                    style={{
+                      left: `calc(50% + ${pos.x}px)`,
+                      top: `calc(50% + ${pos.y}px)`,
+                      transform: `translate(-50%, -50%) scale(${isActive ? 1.2 : 1})`,
+                      zIndex: isActive ? 20 : 10,
+                    }}
+                    className="absolute transition-all duration-500 cursor-pointer outline-none focus:outline-none focus:ring-4 focus:ring-slate-700 ring-offset-4 ring-offset-[#0A101D] rounded-full group hover:scale-110"
                   >
-                     <div 
-                       className="absolute inset-0 rounded-full transition-colors duration-500"
-                       style={{ 
-                         backgroundColor: isActive ? step.color : '#1e293b',
-                         boxShadow: isActive ? `0 0 30px ${step.glow}, inset 0 2px 4px rgba(255,255,255,0.3)` : 'none'
-                       }}
-                     />
-                     <step.icon className={`relative z-10 mb-1.5 transition-all duration-500 ${
-                       isActive ? 'w-8 h-8 md:w-10 md:h-10 text-white drop-shadow-md' : 'w-6 h-6 md:w-7 md:h-7 text-slate-400'
-                     }`} />
-                     <span className={`relative z-10 font-bold tracking-wide transition-all duration-500 ${
-                       isActive ? 'text-[11px] md:text-xs text-white drop-shadow-md' : 'text-[9px] md:text-[10px] text-slate-400'
-                     }`}>
-                       {step.short}
-                     </span>
+                    {/* Glow ring */}
+                    <div
+                      className={`absolute inset-[-10px] rounded-full blur-xl transition-opacity duration-500 ${isActive ? "opacity-60" : "opacity-0"}`}
+                      style={{ background: step.color }}
+                    />
+                    
+                    {/* Node */}
+                    <div
+                      className={`relative w-[72px] h-[72px] sm:w-[88px] sm:h-[88px] rounded-full flex flex-col items-center justify-center shadow-xl transition-all duration-300 ${
+                        isActive
+                          ? "ring-[3px] ring-white/80"
+                          : "hover:ring-2 hover:ring-white/30"
+                      }`}
+                      style={{
+                        background: `linear-gradient(135deg, ${step.color}, ${step.color}bb)`,
+                        boxShadow: isActive
+                          ? `0 16px 48px -8px ${step.glow}`
+                          : `0 8px 24px -8px ${step.glow}`,
+                      }}
+                    >
+                      <step.icon
+                        className="text-white mb-0.5 transition-transform duration-300"
+                        size={isActive ? 26 : 22}
+                      />
+                      <span className="text-white text-[10px] sm:text-[11px] font-semibold leading-tight px-1 text-center">
+                        {step.short}
+                      </span>
+                    </div>
                   </button>
                 );
               })}
 
               {/* Center Element */}
-              <div className="absolute inset-0 m-auto w-[45%] h-[45%] rounded-full border border-slate-700/50 bg-[#161f30]/80 backdrop-blur-md flex flex-col items-center justify-center text-center shadow-xl z-10">
-                <span className="font-extrabold text-white text-xl md:text-2xl leading-tight">Sahil<br/>Packaging</span>
-                <span 
-                  className="font-bold text-sm md:text-base mt-2 transition-colors duration-500"
-                  style={{ color: activeStep.color }}
-                >
-                  Premium
-                </span>
-                <span className="text-[10px] md:text-xs text-slate-400 mt-1 uppercase tracking-widest">Machinery</span>
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 sm:w-40 sm:h-40 z-30 pointer-events-none">
+                {/* Hub glow */}
+                <div
+                  className="absolute inset-[-12px] rounded-full blur-2xl opacity-35 transition-all duration-500"
+                  style={{
+                    background: `linear-gradient(135deg, ${activeStep.color}, ${activeStep.color}99)`,
+                  }}
+                />
+                
+                {/* Hub circle */}
+                <div className="relative w-full h-full rounded-full bg-linear-to-br from-white/10 to-white/4 border border-white/15 shadow-2xl flex flex-col items-center justify-center backdrop-blur-md">
+                  <span className="font-extrabold text-white text-lg sm:text-xl leading-tight">
+                    Sahil<br />
+                    <span className="text-transparent bg-clip-text" style={{ backgroundImage: `linear-gradient(to right, ${activeStep.color}, #cbd5e1)` }}>Packaging</span>
+                  </span>
+                  <div className="mt-1">
+                    <p className="text-white/60 text-[9px] sm:text-[10px] mt-0.5 text-center uppercase tracking-widest font-bold">
+                      Step {activeStep.id}
+                    </p>
+                  </div>
+                </div>
               </div>
               
             </div>
