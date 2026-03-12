@@ -174,7 +174,7 @@ export function Footer() {
           {/* Bottom Bar */}
           <div className="mt-16 border-t border-white/10 pt-6 flex flex-col items-center justify-between gap-4 md:flex-row">
             <p className="text-sm text-[#a0aabf] text-center md:text-left">
-              © Copyright {year} Sahil Packaging Industries All Rights Reserved. Designed by <a href="https://www.stsdigitalsolutions.com/" target="_blank" rel="noopener noreferrer" className="text-[#c3090c] hover:text-red-500 font-semibold transition-colors">STS Digital Solutions</a>
+              © Copyright {year} Sahil Packaging Industries All Rights Reserved. Designed by <span className="text-[#c3090c] font-semibold">Prizm Technologies</span>
             </p>
             
             {/* Social Icons inside bottom bar */}
