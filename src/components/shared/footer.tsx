@@ -89,7 +89,7 @@ export function Footer() {
                 An ISO 9001:2015 Certified Co.
               </h3>
               <p className="text-[#a0aabf] text-sm leading-loose max-w-sm">
-                Established in the year 2005 as a Sole Proprietor Firm at Faridabad (Haryana, India), we <strong className="text-white font-semibold">"Sahil Packaging Industries"</strong> are a leading manufacturer of All Types of Pouch Packing Machines. We offer a complete solution for all your pouch packing needs, ensuring efficiency, reliability, and customization tailored to your industry requirements.
+                Established in the year 2005 as a Sole Proprietor Firm at Faridabad (Haryana, India), we <strong className="text-white font-semibold">&quot;Sahil Packaging Industries&quot;</strong> are a leading manufacturer of All Types of Pouch Packing Machines. We offer a complete solution for all your pouch packing needs, ensuring efficiency, reliability, and customization tailored to your industry requirements.
               </p>
             </div>
 
